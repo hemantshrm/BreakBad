@@ -1,3 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:demo/Model/api_model.dart';
+import 'package:demo/bloc/BB_bloc.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -10,10 +14,19 @@ class _BBScreenState extends State<BBScreen> {
   TextEditingController searchFieldController;
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  final _breakingBBLoc = BreakingBadBloc();
+
   @override
   void initState() {
     super.initState();
+    _breakingBBLoc.bBEventSink.add(Doing.FETCH);
     searchFieldController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _breakingBBLoc.dispose();
   }
 
   @override
@@ -150,99 +163,120 @@ class _BBScreenState extends State<BBScreen> {
                   padding: EdgeInsets.fromLTRB(20, 8, 20, 8),
                   child: Row(
                     mainAxisSize: MainAxisSize.max,
-                    children: [Text('Upcoming Classes', style: kTextStyle)],
+                    children: [Text('Characters', style: kTextStyle)],
                   ),
                 ),
                 Container(
                   height: MediaQuery.of(context).size.height,
-                  child: ListView.builder(
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: 6,
-                    itemBuilder: (context, index) => Padding(
-                      padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          color: Color(0xFF090F13),
-                          image: DecorationImage(
-                            fit: BoxFit.fitWidth,
-                            image: Image.asset(
-                              'assets/images/john-arano-h4i9G-de7Po-unsplash.jpg',
-                            ).image,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              blurRadius: 3,
-                              color: Color(0x33000000),
-                              offset: Offset(0, 2),
-                            )
-                          ],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(0, 120, 0, 0),
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Color(0xFF090F13),
-                              borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(8),
-                                bottomRight: Radius.circular(8),
-                                topLeft: Radius.circular(0),
-                                topRight: Radius.circular(0),
+                  child: StreamBuilder<List<BreakingBadModel>>(
+                      stream: _breakingBBLoc.charactersStream,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError) {
+                          return Center(
+                              child: Text(
+                            snapshot.error ?? 'error',
+                            style: TextStyle(color: Colors.white),
+                          ));
+                        } else if (snapshot.hasData) {
+                          return ListView.builder(
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: snapshot.data.length,
+                            itemBuilder: (context, index) => Padding(
+                              padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width,
+                                height: 200,
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF090F13),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      blurRadius: 3,
+                                      color: Color(0x33000000),
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                  image: DecorationImage(
+                                      image: NetworkImage(
+                                          '${snapshot.data[index].img}'),
+                                      fit: BoxFit.fitWidth),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Padding(
+                                  padding: EdgeInsets.fromLTRB(0, 120, 0, 0),
+                                  child: Container(
+                                    width: 100,
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFF090F13),
+                                      borderRadius: BorderRadius.only(
+                                        bottomLeft: Radius.circular(8),
+                                        bottomRight: Radius.circular(8),
+                                        topLeft: Radius.circular(0),
+                                        topRight: Radius.circular(0),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.max,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Padding(
+                                          padding:
+                                              EdgeInsets.fromLTRB(16, 0, 16, 0),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.max,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.max,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                        '${snapshot.data[index].name}',
+                                                        style: kTextStyle),
+                                                    Text(
+                                                        '${snapshot.data[index].nickname}',
+                                                        style: kTextStyle)
+                                                  ],
+                                                ),
+                                              ),
+                                              Column(
+                                                mainAxisSize: MainAxisSize.max,
+                                                children: [
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      print(
+                                                          'Button-Reserve pressed ...');
+                                                    },
+                                                    icon: Icon(
+                                                      Icons.add_rounded,
+                                                      color: Colors.white,
+                                                      size: 15,
+                                                    ),
+                                                  )
+                                                ],
+                                              )
+                                            ],
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.max,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.max,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text('Class Name',
-                                                style: kTextStyle),
-                                            Text(
-                                                '30m | High Intensity | Indoor/Outdoor',
-                                                style: kTextStyle)
-                                          ],
-                                        ),
-                                      ),
-                                      Column(
-                                        mainAxisSize: MainAxisSize.max,
-                                        children: [
-                                          IconButton(
-                                            onPressed: () {
-                                              print(
-                                                  'Button-Reserve pressed ...');
-                                            },
-                                            icon: Icon(
-                                              Icons.add_rounded,
-                                              color: Colors.white,
-                                              size: 15,
-                                            ),
-                                          )
-                                        ],
-                                      )
-                                    ],
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                          );
+                        }
+                        return SizedBox(
+                          height: 0,
+                        );
+                      }),
                 )
               ],
             ),
